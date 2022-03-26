@@ -18,6 +18,7 @@
 	"activationEvents": [
 		"onCommand:catCoding.start",
 		"onCommand:catCoding.doRefactor",
+		"onCommand:pluto.showPluto",
 		"onWebviewPanel:catCoding"
 	],
 	"main": "./out/extension.js",
@@ -32,6 +33,11 @@
 				"command": "catCoding.doRefactor",
 				"title": "Do some refactoring",
 				"category": "Cat Coding"
+			},
+			{
+				"command": "pluto.showPluto",
+				"title": "Show Pluto logo",
+				"category": "Pluto"
 			}
 		]
 	},

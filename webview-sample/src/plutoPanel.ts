@@ -1,66 +1,12 @@
 import * as vscode from 'vscode';
-import { PlutoPanel } from './plutoPanel';
 
-const cats = {
-	'Coding Cat': 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif',
-	'Compiling Cat': 'https://media.giphy.com/media/mlvseq9yvZhba/giphy.gif',
-	'Testing Cat': 'https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif'
-};
-
-export function activate(context: vscode.ExtensionContext) {
-	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.start', () => {
-			CatCodingPanel.createOrShow(context.extensionUri);
-		})
-	);
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('pluto.showPluto', () => {
-			PlutoPanel.createOrShow(context.extensionUri);
-		})
-	);
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.doRefactor', () => {
-			if (CatCodingPanel.currentPanel) {
-				CatCodingPanel.currentPanel.doRefactor();
-			}
-		})
-	);
-
-	if (vscode.window.registerWebviewPanelSerializer) {
-		// Make sure we register a serializer in activation event
-		vscode.window.registerWebviewPanelSerializer(CatCodingPanel.viewType, {
-			async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
-				console.log(`Got state: ${state}`);
-				// Reset the webview options so we use latest uri for `localResourceRoots`.
-				webviewPanel.webview.options = getWebviewOptions(context.extensionUri);
-				CatCodingPanel.revive(webviewPanel, context.extensionUri);
-			}
-		});
-	}
-}
-
-function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
-	return {
-		// Enable javascript in the webview
-		enableScripts: true,
-
-		// And restrict the webview to only loading content from our extension's `media` directory.
-		localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
-	};
-}
-
-/**
- * Manages cat coding webview panels
- */
-class CatCodingPanel {
+export class PlutoPanel {
 	/**
 	 * Track the currently panel. Only allow a single panel to exist at a time.
 	 */
-	public static currentPanel: CatCodingPanel | undefined;
+	public static currentPanel: PlutoPanel | undefined;
 
-	public static readonly viewType = 'catCoding';
+	public static readonly viewType = 'pluto';
 
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;
@@ -72,24 +18,24 @@ class CatCodingPanel {
 			: undefined;
 
 		// If we already have a panel, show it.
-		if (CatCodingPanel.currentPanel) {
-			CatCodingPanel.currentPanel._panel.reveal(column);
+		if (PlutoPanel.currentPanel) {
+			PlutoPanel.currentPanel._panel.reveal(column);
 			return;
 		}
 
 		// Otherwise, create a new panel.
 		const panel = vscode.window.createWebviewPanel(
-			CatCodingPanel.viewType,
-			'Cat Coding',
+			PlutoPanel.viewType,
+			'Pluto',
 			column || vscode.ViewColumn.One,
-			getWebviewOptions(extensionUri),
+			{},
 		);
 
-		CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
+		PlutoPanel.currentPanel = new PlutoPanel(panel, extensionUri);
 	}
 
 	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-		CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
+		PlutoPanel.currentPanel = new PlutoPanel(panel, extensionUri);
 	}
 
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
@@ -135,7 +81,7 @@ class CatCodingPanel {
 	}
 
 	public dispose() {
-		CatCodingPanel.currentPanel = undefined;
+		PlutoPanel.currentPanel = undefined;
 
 		// Clean up our resources
 		this._panel.dispose();
@@ -150,30 +96,12 @@ class CatCodingPanel {
 
 	private _update() {
 		const webview = this._panel.webview;
-
-		// Vary the webview's content based on where it is located in the editor.
-		switch (this._panel.viewColumn) {
-			case vscode.ViewColumn.Two:
-				this._updateForCat(webview, 'Compiling Cat');
-				return;
-
-			case vscode.ViewColumn.Three:
-				this._updateForCat(webview, 'Testing Cat');
-				return;
-
-			case vscode.ViewColumn.One:
-			default:
-				this._updateForCat(webview, 'Coding Cat');
-				return;
-		}
+		this._panel.title = "Pluto";
+		this._panel.webview.html = this._getHtmlForWebview(webview);
 	}
 
-	private _updateForCat(webview: vscode.Webview, catName: keyof typeof cats) {
-		this._panel.title = catName;
-		this._panel.webview.html = this._getHtmlForWebview(webview, cats[catName]);
-	}
-
-	private _getHtmlForWebview(webview: vscode.Webview, catGifPath: string) {
+	private _getHtmlForWebview(webview: vscode.Webview) {
+		const plutoLogoPath = "https://raw.githubusercontent.com/fonsp/Pluto.jl/dd0ead4caa2d29a3a2cfa1196d31e3114782d363/frontend/img/logo_white_contour.svg";
 		// Local path to main script run in the webview
 		const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
 
@@ -207,11 +135,10 @@ class CatCodingPanel {
 				<link href="${stylesResetUri}" rel="stylesheet">
 				<link href="${stylesMainUri}" rel="stylesheet">
 
-				<title>Cat Coding</title>
+				<title>Pluto</title>
 			</head>
 			<body>
-				<img src="${catGifPath}" width="300" />
-				<h1 id="lines-of-code-counter">0</h1>
+				<img src="${plutoLogoPath}" width="300" />
 
 				<script nonce="${nonce}" src="${scriptUri}"></script>
 			</body>
